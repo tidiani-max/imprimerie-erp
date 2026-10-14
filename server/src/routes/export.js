@@ -2,6 +2,7 @@ import { Router } from 'express';
 import ExcelJS from 'exceljs';
 import { likeParam } from '../http.js';
 import { getDashboard } from '../dashboardData.js';
+import { SUPPORT_TYPES } from '../supports.js';
 import { readSettings } from './settings.js';
 
 // Excel (.xlsx) exports. Same filters as the screens; every authenticated user may export what they can already see.
@@ -96,6 +97,8 @@ router.get('/orders.xlsx', async (req, res) => {
   if (PERIOD_SQL[req.query.period]) { where.push(`o.order_date >= ${PERIOD_SQL[req.query.period]}`); filters.push(PERIOD_FR[req.query.period]); }
   if (one(req.query.method)) { where.push(`o.payment_method = ${add(req.query.method)}`); filters.push(`paiement ${req.query.method}`); }
   if (one(req.query.service)) { where.push(`o.product_service = ${add(req.query.service)}`); filters.push(`service ${req.query.service}`); }
+  if (req.query.support === 'all') { where.push('o.support_type IS NOT NULL'); filters.push('bâches & autocollants'); }
+  else if (SUPPORT_TYPES.includes(req.query.support)) { where.push(`o.support_type = ${add(req.query.support)}`); filters.push(`support ${req.query.support}`); }
   const rows = await db.query(
     `SELECT o.order_number, o.order_date, c.name AS client, o.product_service, o.quantity, o.unit_price, o.total_amount, o.amount_paid,
             (o.total_amount - o.amount_paid) AS due, o.payment_method, o.status, o.due_date,

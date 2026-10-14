@@ -9,7 +9,9 @@ import { Button, ErrorNote, Field, Icon, Modal, SelectField, inputCls, notify, n
 
 const METHODS = ["Espèces", "Carte", "Virement"];
 
-export default function NewOrderModal({ onClose, onCreated }: { onClose: () => void; onCreated?: (o: Order) => void }) {
+type Preset = { supportType?: string; width?: string; height?: string; qty?: number; extra?: string };
+/** `preset` pre-fills the form (e.g. from the price calculator); `supportOnly` hides the free-text "other product" choice. */
+export default function NewOrderModal({ onClose, onCreated, preset, supportOnly = false }: { onClose: () => void; onCreated?: (o: Order) => void; preset?: Preset; supportOnly?: boolean }) {
   const { settings } = useAuth();
   const { data: clients, reload: reloadClients } = useApi(() => api.get<{ clients: Client[] }>("/clients"));
   const { data: stock } = useApi(() => api.get<{ items: StockItem[] }>("/stock"));
@@ -17,13 +19,13 @@ export default function NewOrderModal({ onClose, onCreated }: { onClose: () => v
 
   const [clientId, setClientId] = useState<number | "">("");
   const [service, setService] = useState("");
-  const [supportType, setSupportType] = useState(""); // "" = free item; otherwise priced by surface
-  const [width, setWidth] = useState("");
-  const [height, setHeight] = useState("");
-  const [extra, setExtra] = useState("");
+  const [supportType, setSupportType] = useState(preset?.supportType ?? ""); // "" = free item; otherwise priced by surface
+  const [width, setWidth] = useState(preset?.width ?? "");
+  const [height, setHeight] = useState(preset?.height ?? "");
+  const [extra, setExtra] = useState(preset?.extra ?? "");
   const [inventoryId, setInventoryId] = useState<number | "">("");
   const [materialUsed, setMaterialUsed] = useState<string>("");
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(preset?.qty ?? 1);
   const [price, setPrice] = useState(0);
   const [paid, setPaid] = useState(0);
   const [method, setMethod] = useState("Espèces");
@@ -90,14 +92,14 @@ export default function NewOrderModal({ onClose, onCreated }: { onClose: () => v
     <div>
       <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Client</label>
       {quickName === null
-        ? <div className="mt-2 flex gap-2"><SelectField value={String(clientId)} onChange={v => setClientId(v ? Number(v) : "")} className="flex-1"><option value="">— Choisir un client —</option>{clients?.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectField><Button variant="secondary" icon="plus" onClick={() => setQuickName("")}>Ajout rapide</Button></div>
+        ? <div className="mt-2 flex gap-2"><SelectField value={String(clientId)} onChange={v => setClientId(v ? Number(v) : "")} className="flex-1"><option value="">Choisir un client —</option>{clients?.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectField><Button variant="secondary" icon="plus" onClick={() => setQuickName("")}>Ajout rapide</Button></div>
         : <div className="mt-2 flex gap-2"><input autoFocus value={quickName} onChange={e => setQuickName(e.target.value)} onKeyDown={e => e.key === "Enter" && addClient()} className="h-10 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" placeholder="Nom du nouveau client"/><Button onClick={addClient}>Ajouter</Button><Button variant="ghost" onClick={() => setQuickName(null)}>Annuler</Button></div>}
     </div>
 
     <p className="pt-2 font-bold text-slate-900">Article de la commande</p>
     <div className="rounded-2xl border border-slate-200 p-4">
       <Field label="Type de support" hint="Bâche, autocollant… : le prix se calcule tout seul à partir de la taille.">
-        <SelectField value={supportType} onChange={setSupportType} className="mt-2 w-full"><option value="">Autre produit ou service (saisie libre)</option>{SUPPORT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</SelectField>
+        <SelectField value={supportType} onChange={setSupportType} className="mt-2 w-full">{!supportOnly && <option value="">Autre produit ou service (saisie libre)</option>}{SUPPORT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</SelectField>
       </Field>
       {supportType && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Field label="Largeur (cm)"><input min="0" step="any" type="number" value={width} onChange={e => setWidth(e.target.value)} className={`${inputCls.replace("h-11", "h-10")} font-mono`} placeholder="ex. 200"/></Field>
@@ -111,7 +113,7 @@ export default function NewOrderModal({ onClose, onCreated }: { onClose: () => v
       </p>}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {!supportType && <Field label="Produit / Service"><input list="services" value={service} onChange={e => setService(e.target.value)} className={inputCls.replace("h-11", "h-10")} placeholder="Bâche 510g, Cartes de visite…"/><datalist id="services">{past?.services.map(s => <option key={s} value={s}/>)}</datalist></Field>}
-        <Field label="Matière consommée (optionnel)"><SelectField value={String(inventoryId)} onChange={v => { setInventoryId(v ? Number(v) : ""); setMaterialUsed(""); }} className="mt-2 w-full"><option value="">Aucune</option>{stock?.items.map(i => <option key={i.id} value={i.id}>{i.item} — {i.current_stock} {i.unit}</option>)}</SelectField></Field>
+        <Field label="Matière consommée (optionnel)"><SelectField value={String(inventoryId)} onChange={v => { setInventoryId(v ? Number(v) : ""); setMaterialUsed(""); }} className="mt-2 w-full"><option value="">Aucune</option>{stock?.items.map(i => <option key={i.id} value={i.id}>{i.item} {i.current_stock} {i.unit}</option>)}</SelectField></Field>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Field label="Quantité"><input min="0.01" step="any" type="number" value={qty} onChange={e => setQty(Number(e.target.value))} className={`${inputCls.replace("h-11", "h-10")} font-mono`}/></Field>

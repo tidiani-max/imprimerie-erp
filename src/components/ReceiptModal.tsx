@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import { buildOrderReceiptHtml, buildPaymentReceiptHtml, downloadReceiptPdf, printHtml, type ReceiptRequest } from "../lib/receipt";
@@ -10,7 +11,7 @@ type OrderReceiptData = { order: Order; client: { debt: number; opening_due: num
 const fileSafe = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "recu";
 
 function ReceiptModal({ req, onClose }: { req: ReceiptRequest; onClose: () => void }) {
-  const { settings } = useAuth();
+  const { settings, user } = useAuth();
   const { data, error } = useApi<OrderReceiptData | null>(() => (req.kind === "order" ? api.get<OrderReceiptData>(`/orders/${req.id}/receipt`) : Promise.resolve(null)), [req.kind === "order" ? req.id : 0]);
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +36,7 @@ function ReceiptModal({ req, onClose }: { req: ReceiptRequest; onClose: () => vo
   return <Modal wide title={req.kind === "order" ? (data?.order.order_number ?? "Reçu") : "Reçu de paiement"} eyebrow="Reçu" onClose={onClose}
     footer={<><Button variant="secondary" onClick={onClose}>Fermer</Button><Button variant="secondary" icon="download" disabled={!html || busy} onClick={pdf}>Télécharger le PDF</Button><Button icon="printer" disabled={!html} onClick={() => printHtml(html)}>Imprimer</Button></>}>
     <ErrorNote message={error}/>
+    {user?.role === "owner" && !settings.logo && <p className="mb-3 rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-900">Pas de logo sur ce reçu. <Link to="/settings" onClick={onClose} className="font-semibold underline">Ajouter le logo</Link></p>}
     {!html && !error && <p className="text-sm text-slate-400">Chargement…</p>}
     {html && <iframe title="Aperçu du reçu" data-testid="receipt-frame" srcDoc={html} className="h-[460px] w-full rounded-xl border border-slate-200 bg-white"/>}
   </Modal>;

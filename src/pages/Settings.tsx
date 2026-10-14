@@ -6,7 +6,7 @@ import { buildOrderReceiptHtml } from "../lib/receipt";
 import { SUPPORT_TYPES, type Settings } from "../lib/types";
 
 const card = "rounded-2xl border border-slate-200 bg-white p-6 shadow-sm";
-const CURRENCIES = ["FCFA", "DH", "€", "$"];
+const CURRENCIES = ["FCFA", "FCFA", "€", "$"];
 const SAMPLE = { order_number: "CMD-1048", client_name: "Client exemple", product_service: "Bâche", support_type: "Bâche", width_cm: 200, height_cm: 100, rate_cm2: 0.3, extra_fees: 0, quantity: 2, unit_price: 6000, total_amount: 12000, amount_paid: 5000, amount_due: 7000, order_date: new Date().toISOString().slice(0, 10), status: "Partial" as const, payment_method: "Espèces", client: { debt: 47000, opening_due: 40000 } };
 
 /** Shrinks the picked image (max 400×200) so it stays light; PNG/WebP keep transparency, JPEG stays JPEG. */

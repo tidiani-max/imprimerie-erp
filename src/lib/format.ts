@@ -5,9 +5,9 @@ const nfInt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 export const money = (n: number | null | undefined) => nf.format(n ?? 0);
 /** 24 -> "24", 1160 -> "1 160" (quantities, no forced decimals) */
 export const num = (n: number | null | undefined) => nfInt.format(n ?? 0);
-// The currency label comes from Paramètres (FCFA, DH, €…); set once the settings are loaded.
-let currency = "DH";
-export const setCurrency = (c: string | null | undefined) => { currency = (c ?? "").trim() || "DH"; };
+// The currency label comes from Paramètres (FCFA, FCFA, €…); set once the settings are loaded.
+let currency = "FCFA";
+export const setCurrency = (c: string | null | undefined) => { currency = (c ?? "").trim() || "FCFA"; };
 export const cur = () => currency;
 export const dh = (n: number | null | undefined) => `${money(n)} ${currency}`;
 

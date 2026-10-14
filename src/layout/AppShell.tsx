@@ -8,13 +8,15 @@ import { dh, initials, roleLabel } from "../lib/format";
 import type { Alerts, Order } from "../lib/types";
 import { useApi, useDebounced } from "../lib/useApi";
 
-const navItems: { to: string; label: string; icon: IconName; end?: boolean }[] = [
+const navItems: { to: string; label: string; icon: IconName; end?: boolean; ownerOnly?: boolean }[] = [
   { to: "/", label: "Tableau de bord", icon: "dashboard", end: true },
   { to: "/orders", label: "Ventes / Commandes", icon: "orders" },
+  { to: "/supports", label: "Bâches & autocollants", icon: "banner" },
   { to: "/clients", label: "Clients / Dettes", icon: "clients" },
   { to: "/stock", label: "Stock", icon: "stock" },
   { to: "/expenses", label: "Dépenses", icon: "expenses" },
   { to: "/cash", label: "Caisse", icon: "cash" },
+  { to: "/settings", label: "Paramètres & logo", icon: "settings", ownerOnly: true },
 ];
 
 function useClickAway(onAway: () => void) {
@@ -29,6 +31,7 @@ function useClickAway(onAway: () => void) {
 
 export default function AppShell() {
   const { user, shopName, logout, settings } = useAuth();
+  const items = navItems.filter(n => !n.ownerOnly || user?.role === "owner");
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileNav, setMobileNav] = useState(false);
@@ -49,8 +52,8 @@ export default function AppShell() {
 
   const lowCount = alerts?.low_stock.length ?? 0;
   const overdueCount = alerts?.overdue_clients.length ?? 0;
-  const title = navItems.find(n => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)))?.label;
-  const matchingNav = navItems.filter(n => n.label.toLowerCase().includes(search.toLowerCase()));
+  const title = items.find(n => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)))?.label;
+  const matchingNav = items.filter(n => n.label.toLowerCase().includes(search.toLowerCase()));
 
   return <div className="min-h-screen bg-slate-50 text-slate-900">
     {mobileNav && <div className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" onClick={() => setMobileNav(false)}/>}
@@ -61,7 +64,7 @@ export default function AppShell() {
         <Button variant="ghost" icon="close" className="ml-auto h-8 w-8 p-0 text-slate-400 lg:hidden" onClick={() => setMobileNav(false)}/>
       </div>
       <nav className="flex-1 space-y-1.5 p-3"><p className="px-3 pb-2 pt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Navigation</p>
-        {navItems.map(item => <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${isActive ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+        {items.map(item => <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${isActive ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
           {({ isActive }) => <><Icon name={item.icon} className="h-5 w-5"/><span>{item.label}</span>{isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white"/>}</>}
         </NavLink>)}
       </nav>

@@ -4,6 +4,7 @@ import ExportButton from "../components/ExportButton";
 import NewOrderModal from "../components/NewOrderModal";
 import OrdersTable, { type OrderRow } from "../components/OrdersTable";
 import PayOrderModal from "../components/PayOrderModal";
+import { Link } from "react-router-dom";
 import { Button, Icon, KpiCard, PageTitle, notify } from "../components/ui";
 import { api, qs } from "../lib/api";
 import { cur, dh, money } from "../lib/format";
@@ -26,14 +27,14 @@ function SalesChart({ series }: { series: DashboardData["series"] }) {
       <polygon points={`${x(0)},160 ${pts("sales")} ${x(series.length - 1)},160`} fill="url(#salesFill)"/>
       <polyline points={pts("sales")} fill="none" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
       <polyline points={pts("expenses")} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 4"/>
-      {series.map((s, i) => <circle key={s.month} cx={x(i)} cy={y(s.sales)} r="3.5" fill="white" stroke="#2563eb" strokeWidth="2"><title>{`${s.month} — ventes ${dh(s.sales)}, dépenses ${dh(s.expenses)}`}</title></circle>)}
+      {series.map((s, i) => <circle key={s.month} cx={x(i)} cy={y(s.sales)} r="3.5" fill="white" stroke="#2563eb" strokeWidth="2"><title>{`${s.month} ventes ${dh(s.sales)}, dépenses ${dh(s.expenses)}`}</title></circle>)}
       {series.map((s, i) => <text key={s.month} x={x(i)} y="180" textAnchor="middle" fontSize="10" fill="#94a3b8">{MONTHS[Number(s.month.slice(5)) - 1]}</text>)}
     </svg>
   </div>;
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const [creating, setCreating] = useState(false);
   const [paying, setPaying] = useState<OrderRow | null>(null);
   const { data: d, error, loading } = useApi(() => api.get<DashboardData>("/dashboard"));
@@ -48,6 +49,7 @@ export default function DashboardPage() {
 
   return <>
     <PageTitle title={`Bonjour, ${user?.name.split(" ")[0] ?? ""}`} subtitle="Voici l'activité de votre imprimerie aujourd'hui." action={<div className="flex gap-2"><ExportButton kind="report" label="Rapport Excel"/><Button icon="plus" onClick={() => setCreating(true)}>Nouvelle commande</Button></div>}/>
+    {user?.role === "owner" && !settings.logo && <Link to="/settings" className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900 hover:bg-blue-100"><span><b>Ajoutez le logo de votre imprimerie.</b> Il s'imprimera sur chaque reçu, avec le nom, l'adresse et le téléphone.</span><span className="shrink-0 font-semibold">Ouvrir les paramètres →</span></Link>}
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiCard title="Chiffre d'affaires du jour" value={dh(d.today_revenue)} detail="vs hier" trendValue={d.today_revenue_trend} icon="wallet"/>
       <KpiCard title="Chiffre d'affaires du mois" value={dh(d.monthly_revenue)} detail="vs mois dernier" trendValue={d.monthly_revenue_trend} icon="arrowUp" tone="green"/>

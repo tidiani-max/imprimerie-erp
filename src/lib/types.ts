@@ -48,7 +48,7 @@ export type Settings = {
   print_rates: Record<string, number>; // price per cm² for each support
 };
 export const DEFAULT_SETTINGS: Settings = {
-  shop_name: "", shop_address: "", shop_phone: "", shop_email: "", receipt_footer: "", currency: "DH", receipt_format: "a5", logo: null,
+  shop_name: "", shop_address: "", shop_phone: "", shop_email: "", receipt_footer: "", currency: "FCFA", receipt_format: "a5", logo: null,
   print_rates: { "Bâche": 0.3, "Autocollant": 0.3, "Perforé": 0.45, "Étiquettes": 0.45, "Transparents": 0.45 },
 };
 // Supports priced by surface (width × height in cm × rate per cm²).

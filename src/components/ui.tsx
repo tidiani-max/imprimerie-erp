@@ -4,7 +4,7 @@ export type IconName =
   | "dashboard" | "orders" | "clients" | "stock" | "expenses" | "cash"
   | "search" | "calendar" | "plus" | "bell" | "chevron" | "arrowUp"
   | "arrowDown" | "wallet" | "box" | "receipt" | "more" | "printer"
-  | "edit" | "trash" | "menu" | "close" | "filter" | "download";
+  | "edit" | "trash" | "menu" | "close" | "filter" | "download" | "banner" | "settings";
 
 const iconPaths: Record<IconName, ReactNode> = {
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
@@ -31,6 +31,8 @@ const iconPaths: Record<IconName, ReactNode> = {
   close: <path d="m6 6 12 12M18 6 6 18"/>,
   filter: <path d="M4 5h16l-6 7v6l-4 2v-8Z"/>,
   download: <><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></>,
+  banner: <><rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M7 7v3M11 7v2M15 7v3M19 7v2"/></>,
+  settings: <><path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></>,
 };
 
 export function Icon({ name, className = "h-5 w-5", ...props }: { name: IconName; className?: string } & SVGProps<SVGSVGElement>) {

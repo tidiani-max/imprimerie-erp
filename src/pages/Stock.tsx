@@ -56,7 +56,7 @@ function AdjustModal({ items, onClose }: { items: StockItem[]; onClose: () => vo
     } catch (e) { setError(e instanceof Error ? e.message : "Erreur"); setBusy(false); }
   };
   return <Modal title="Ajustement de stock" eyebrow="Stock" onClose={onClose} footer={<><Button variant="secondary" onClick={onClose}>Annuler</Button><Button disabled={busy || !item} onClick={save}>Enregistrer</Button></>}>
-    <Field label="Article"><SelectField value={String(id)} onChange={v => setId(Number(v))} className={`${inputCls} !h-11 w-full`}>{items.map(i => <option key={i.id} value={i.id}>{i.ref} — {i.item} ({num(i.current_stock)} {i.unit})</option>)}</SelectField></Field>
+    <Field label="Article"><SelectField value={String(id)} onChange={v => setId(Number(v))} className={`${inputCls} !h-11 w-full`}>{items.map(i => <option key={i.id} value={i.id}>{i.ref} {i.item} ({num(i.current_stock)} {i.unit})</option>)}</SelectField></Field>
     <div className="grid grid-cols-2 gap-2">{([["in", "Entrée (réappro.)"], ["out", "Sortie / perte"]] as const).map(([k, label]) => <button key={k} type="button" onClick={() => setKind(k)} className={`rounded-xl border px-3 py-3 text-sm font-semibold ${kind === k ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}>{label}</button>)}</div>
     <Field label={`Quantité${item ? ` (${item.unit})` : ""}`}><input autoFocus type="number" min="0" step="any" value={amount} onChange={e => setAmount(e.target.value)} className={`${inputCls} font-mono`} placeholder="0"/></Field>
     <ErrorNote message={error}/>
