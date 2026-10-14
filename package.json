@@ -18,8 +18,8 @@
     "desktop:dev": "concurrently -k -n vite,api,electron -c blue,green,magenta \"vite\" \"cross-env PORT=3001 node server/src/index.js\" \"wait-on tcp:8443 tcp:3001 && cross-env ELECTRON_DEV_URL=http://localhost:8443 electron .\"",
     "desktop:build": "vite build && electron-builder --publish never",
     "desktop:build:win": "vite build && electron-builder --win --x64 --publish never",
-    "desktop:build:mac": "vite build && electron-builder --mac --publish never",
-    "desktop:build:mac:universal": "vite build && electron-builder --mac --universal --publish never",
+    "desktop:build:mac": "vite build && electron-builder --mac --x64 --arm64 --publish never",
+    "desktop:build:mac:universal": "vite build && electron-builder --mac --x64 --arm64 --publish never",
     "qa": "node server/test/qa.mjs --rows=100000 --out=qa-report.md",
     "qa:full": "node --max-old-space-size=3000 server/test/qa.mjs --rows=1000000 --out=qa-report-1M.md",
     "reset-password": "node server/tools/reset-password.js"
@@ -71,10 +71,10 @@
       "package.json"
     ],
     "asarUnpack": [
-      "node_modules/@electric-sql/pglite",
-      "node_modules/exceljs",
-      "node_modules/archiver",
-      "node_modules/lazystream"
+      "node_modules/@electric-sql/pglite/**/*",
+      "node_modules/exceljs/**/*",
+      "node_modules/archiver/**/*",
+      "node_modules/lazystream/**/*"
     ],
     "win": {
       "target": [
@@ -94,7 +94,13 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "category": "public.app-category.business",
       "artifactName": "Imprimerie-ERP-${version}-${arch}.${ext}"
