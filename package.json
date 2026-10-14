@@ -71,10 +71,10 @@
       "package.json"
     ],
     "asarUnpack": [
-      "node_modules/@electric-sql/pglite/**",
-      "node_modules/exceljs/**",
-      "node_modules/archiver/**",
-      "node_modules/lazystream/**"
+      "node_modules/@electric-sql/pglite",
+      "node_modules/exceljs",
+      "node_modules/archiver",
+      "node_modules/lazystream"
     ],
     "win": {
       "target": [
