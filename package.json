@@ -39,6 +39,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.18.4",
+    "readable-stream": "^4.8.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
