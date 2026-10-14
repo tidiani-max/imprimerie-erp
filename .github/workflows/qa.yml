@@ -1,0 +1,35 @@
+# Runs the QA suite (accuracy with many devices on one account + speed at scale) on Windows, macOS and Linux.
+# Run it from GitHub: Actions tab > "QA" > Run workflow. Each OS uploads its own qa-report.md.
+name: QA
+on:
+  workflow_dispatch:
+    inputs:
+      rows:
+        description: "Number of orders to load (100000 = quick, 1000000 = full)"
+        default: "100000"
+  pull_request:
+
+jobs:
+  qa:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:api
+      - run: node --max-old-space-size=3000 server/test/qa.mjs --rows=${{ github.event.inputs.rows || '100000' }} --out=qa-report.md
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report-${{ matrix.os }}
+          path: qa-report.md

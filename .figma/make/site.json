@@ -1,0 +1,12 @@
+{
+  "title": "Imprimerie ERP",
+  "language": "fr",
+  "description": "Streamline operations for print shop owners with an intuitive ERP and CRM dashboard that simplifies order management, inventory tracking, and financial oversight.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

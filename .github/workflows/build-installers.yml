@@ -1,0 +1,41 @@
+# Builds the Windows (.exe) and Mac (.dmg) installers in the cloud, so you do not need a Windows PC.
+# Run it from GitHub: Actions tab > "Build installers" > Run workflow. Download the files from the run's "Artifacts".
+name: Build installers
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: desktop:build:win
+            name: windows-installer
+            files: release/*.exe
+          - os: macos-latest
+            script: desktop:build:mac:universal
+            name: mac-installer
+            files: release/*.dmg
+    runs-on: ${{ matrix.os }}
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false" # installers are not code-signed
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run ${{ matrix.script }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error

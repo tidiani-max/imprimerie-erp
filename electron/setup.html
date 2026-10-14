@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Imprimerie ERP</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  *{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f172a}
+  .wrap{width:min(760px,92vw)}h1{color:#fff;font-size:26px;margin:0 0 6px}p.sub{color:#94a3b8;margin:0 0 28px;font-size:15px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px}
+  .card h2{margin:0;font-size:18px}.card p{margin:0;color:#475569;font-size:14px;line-height:1.5;flex:1}
+  button{height:44px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:600;font-size:15px;cursor:pointer}button:hover{background:#1d4ed8}button:disabled{opacity:.6;cursor:wait}
+  input{height:44px;border:1px solid #cbd5e1;border-radius:12px;padding:0 12px;font-size:15px;width:100%}input:focus{outline:2px solid #2563eb;border-color:transparent}
+  .err{color:#b91c1c;font-size:13px;min-height:18px}.tag{font-size:12px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.04em}
+</style></head><body><div class="wrap">
+  <h1>Imprimerie ERP</h1><p class="sub">Comment ce poste doit-il fonctionner ? Cette question n'est posée qu'une seule fois.</p>
+  <div class="grid">
+    <div class="card"><span class="tag">Un seul par imprimerie</span><h2>Poste principal</h2>
+      <p>Ce PC garde toutes les données de l'imprimerie. Les autres postes s'y connectent. Il doit être allumé pendant le travail.</p>
+      <div class="err" id="e1"></div><button id="srv">Utiliser ce PC comme poste principal</button></div>
+    <div class="card"><span class="tag">Tous les autres PC</span><h2>Poste secondaire</h2>
+      <p>Se connecte au poste principal du même réseau (Wi-Fi ou câble). Entrez l'adresse affichée sur le poste principal.</p>
+      <input id="addr" placeholder="ex. 192.168.1.20:3001" autocomplete="off" spellcheck="false">
+      <div class="err" id="e2"></div><button id="cli">Se connecter</button></div>
+  </div></div>
+<script>
+  const $=id=>document.getElementById(id);
+  $('srv').onclick=async()=>{$('srv').disabled=true;$('e1').textContent='';try{const r=await setup.chooseServer();if(r&&r.error){$('e1').textContent=r.error;$('srv').disabled=false}}catch(e){$('e1').textContent=String(e);$('srv').disabled=false}};
+  const go=async()=>{const a=$('addr').value.trim();if(!a){$('e2').textContent="Entrez l'adresse du poste principal.";return}$('cli').disabled=true;$('cli').textContent='Connexion…';$('e2').textContent='';
+    const r=await setup.chooseClient(a);if(r&&r.error){$('e2').textContent=r.error;$('cli').disabled=false;$('cli').textContent='Se connecter'}};
+  $('cli').onclick=go;$('addr').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+</script></body></html>
