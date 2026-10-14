@@ -7,11 +7,6 @@ import { Button, ErrorNote, Field, SelectField, inputCls, notify } from "../comp
 import type { Role } from "../lib/types";
 import AuthLayout from "./AuthLayout";
 
-/**
- * Two uses of the same screen:
- *  - first launch (no users yet): creates the shop + the owner account
- *  - later: only a logged-in owner can open it, to add staff / owner accounts
- */
 export default function Signup() {
   const { user, loading, needsSetup, shopName, signup, refreshSession } = useAuth();
   const navigate = useNavigate();
@@ -26,8 +21,6 @@ export default function Signup() {
   </AuthLayout>;
   if (loading) return <Splash />;
   if (user && user.role !== "owner") return <Navigate to="/" replace />;
-  if (!user && !needsSetup) return <AuthLayout title="Inscription fermée" subtitle="Les comptes sont créés par le propriétaire de l'imprimerie."
-    footer={<Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">Retour à la connexion</Link>}><span/></AuthLayout>;
 
   const addingStaff = !!user; // logged-in owner creating another account
   const submit = async (e: FormEvent) => {

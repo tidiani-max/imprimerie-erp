@@ -30,7 +30,12 @@ export default function Login() {
     <form onSubmit={submit} className="space-y-4">
       <Field label="E-mail"><input type="email" required autoFocus autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} placeholder="vous@exemple.com"/></Field>
       <Field label="Mot de passe"><input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className={inputCls} placeholder="••••••••"/></Field>
-      <div className="-mt-1 text-right"><Link to="/forgot-password" className="text-xs font-semibold text-blue-600 hover:text-blue-700">Mot de passe oublié ?</Link></div>
+      
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <Link to="/signup" className="text-blue-600 hover:text-blue-700">Créer un compte</Link>
+        <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700">Mot de passe oublié ?</Link>
+      </div>
+
       <ErrorNote message={error}/>
       <Button type="submit" disabled={busy} className="h-11 w-full">{busy ? "Connexion…" : "Se connecter"}</Button>
     </form>
