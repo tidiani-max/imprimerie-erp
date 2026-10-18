@@ -303,5 +303,6 @@ app.on('before-quit', (event) => {
   if (quitting || !backend) return;
   event.preventDefault();
   quitting = true;
+  setTimeout(() => app.exit(0), 5000); // never linger invisibly: an installer cannot replace an app that is still running
   backend.close().catch(console.error).finally(() => app.exit(0));
 });

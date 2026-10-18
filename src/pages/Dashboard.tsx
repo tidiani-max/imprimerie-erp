@@ -27,7 +27,7 @@ function SalesChart({ series }: { series: DashboardData["series"] }) {
       <polygon points={`${x(0)},160 ${pts("sales")} ${x(series.length - 1)},160`} fill="url(#salesFill)"/>
       <polyline points={pts("sales")} fill="none" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
       <polyline points={pts("expenses")} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 4"/>
-      {series.map((s, i) => <circle key={s.month} cx={x(i)} cy={y(s.sales)} r="3.5" fill="white" stroke="#2563eb" strokeWidth="2"><title>{`${s.month} ventes ${dh(s.sales)}, dépenses ${dh(s.expenses)}`}</title></circle>)}
+      {series.map((s, i) => <circle key={s.month} cx={x(i)} cy={y(s.sales)} r="3.5" fill="white" stroke="#2563eb" strokeWidth="2"><title>{`${s.month} — ventes ${dh(s.sales)}, dépenses ${dh(s.expenses)}`}</title></circle>)}
       {series.map((s, i) => <text key={s.month} x={x(i)} y="180" textAnchor="middle" fontSize="10" fill="#94a3b8">{MONTHS[Number(s.month.slice(5)) - 1]}</text>)}
     </svg>
   </div>;

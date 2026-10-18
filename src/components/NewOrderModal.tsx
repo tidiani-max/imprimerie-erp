@@ -92,7 +92,7 @@ export default function NewOrderModal({ onClose, onCreated, preset, supportOnly 
     <div>
       <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Client</label>
       {quickName === null
-        ? <div className="mt-2 flex gap-2"><SelectField value={String(clientId)} onChange={v => setClientId(v ? Number(v) : "")} className="flex-1"><option value="">Choisir un client —</option>{clients?.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectField><Button variant="secondary" icon="plus" onClick={() => setQuickName("")}>Ajout rapide</Button></div>
+        ? <div className="mt-2 flex gap-2"><SelectField value={String(clientId)} onChange={v => setClientId(v ? Number(v) : "")} className="flex-1"><option value="">— Choisir un client —</option>{clients?.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectField><Button variant="secondary" icon="plus" onClick={() => setQuickName("")}>Ajout rapide</Button></div>
         : <div className="mt-2 flex gap-2"><input autoFocus value={quickName} onChange={e => setQuickName(e.target.value)} onKeyDown={e => e.key === "Enter" && addClient()} className="h-10 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" placeholder="Nom du nouveau client"/><Button onClick={addClient}>Ajouter</Button><Button variant="ghost" onClick={() => setQuickName(null)}>Annuler</Button></div>}
     </div>
 
@@ -113,7 +113,7 @@ export default function NewOrderModal({ onClose, onCreated, preset, supportOnly 
       </p>}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {!supportType && <Field label="Produit / Service"><input list="services" value={service} onChange={e => setService(e.target.value)} className={inputCls.replace("h-11", "h-10")} placeholder="Bâche 510g, Cartes de visite…"/><datalist id="services">{past?.services.map(s => <option key={s} value={s}/>)}</datalist></Field>}
-        <Field label="Matière consommée (optionnel)"><SelectField value={String(inventoryId)} onChange={v => { setInventoryId(v ? Number(v) : ""); setMaterialUsed(""); }} className="mt-2 w-full"><option value="">Aucune</option>{stock?.items.map(i => <option key={i.id} value={i.id}>{i.item} {i.current_stock} {i.unit}</option>)}</SelectField></Field>
+        <Field label="Matière consommée (optionnel)"><SelectField value={String(inventoryId)} onChange={v => { setInventoryId(v ? Number(v) : ""); setMaterialUsed(""); }} className="mt-2 w-full"><option value="">Aucune</option>{stock?.items.map(i => <option key={i.id} value={i.id}>{i.item} — {i.current_stock} {i.unit}</option>)}</SelectField></Field>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Field label="Quantité"><input min="0.01" step="any" type="number" value={qty} onChange={e => setQty(Number(e.target.value))} className={`${inputCls.replace("h-11", "h-10")} font-mono`}/></Field>

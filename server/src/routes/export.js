@@ -1,81 +1,53 @@
 import { Router } from 'express';
-import ExcelJS from 'exceljs';
 import { likeParam } from '../http.js';
 import { getDashboard } from '../dashboardData.js';
 import { SUPPORT_TYPES } from '../supports.js';
+import { buildXlsx } from '../xlsx.js';
 import { readSettings } from './settings.js';
 
 // Excel (.xlsx) exports. Same filters as the screens; every authenticated user may export what they can already see.
 const router = Router();
 const MAX_ROWS = 100_000; // keeps memory sane on a shop PC; the sheet says so when it cuts
 const STATUS_FR = { Paid: 'Payé', Partial: 'Partiel', Unpaid: 'Impayé' };
-const FMT = { money: '#,##0.00', qty: '#,##0.##', int: '0', date: 'dd/mm/yyyy' };
 const day = (s) => (s ? new Date(`${String(s).slice(0, 10)}T00:00:00Z`) : null); // DATE strings -> real Excel dates
 const one = (v) => (typeof v === 'string' && v ? v : null);
 
+// A "workbook" here is just the list of sheets; xlsx.js turns it into the .xlsx file.
 function newWorkbook(shop, title, filters) {
-  const wb = new ExcelJS.Workbook();
+  const wb = [];
   wb.creator = shop.shop_name || 'Imprimerie ERP';
-  wb.created = new Date();
   return { wb, title, filters };
-}
-
-function header(ws) {
-  const row = ws.getRow(1);
-  row.height = 22;
-  row.eachCell((c) => {
-    c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
-    c.alignment = { vertical: 'middle', horizontal: 'left' };
-  });
 }
 
 // columns: [{ header, key, type: 'text'|'money'|'qty'|'int'|'date', width, total? }]
 function addTable(wb, name, columns, rows) {
-  const ws = wb.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 1 }] });
-  ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width ?? 16, style: FMT[c.type] ? { numFmt: FMT[c.type] } : {} }));
-  header(ws);
   const truncated = rows.length > MAX_ROWS;
-  const data = truncated ? rows.slice(0, MAX_ROWS) : rows;
-  ws.addRows(data);
-  columns.forEach((c, i) => {
-    if (c.type === 'money' || c.type === 'qty') ws.getColumn(i + 1).alignment = { horizontal: 'right' };
+  wb.push({
+    name, columns, rows: truncated ? rows.slice(0, MAX_ROWS) : rows,
+    note: truncated ? `Export limité aux ${MAX_ROWS.toLocaleString('fr-FR')} lignes les plus récentes.` : undefined,
   });
-  if (data.length) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
-  const totalCols = columns.filter((c) => c.total);
-  if (totalCols.length && data.length) {
-    const r = ws.addRow({});
-    r.getCell(1).value = 'TOTAL';
-    for (const c of totalCols) {
-      const col = ws.getColumn(c.key);
-      r.getCell(c.key).value = { formula: `SUM(${col.letter}2:${col.letter}${data.length + 1})`, result: data.reduce((s, x) => s + (Number(x[c.key]) || 0), 0) };
-    }
-    r.eachCell({ includeEmpty: true }, (c) => { c.font = { bold: true }; c.border = { top: { style: 'thin' } }; });
-  }
-  if (truncated) ws.addRow([`Export limité aux ${MAX_ROWS.toLocaleString('fr-FR')} lignes les plus récentes.`]).font = { italic: true, color: { argb: 'FFB91C1C' } };
-  return { ws, truncated };
+  return { truncated };
 }
 
 function addInfo(ctx, shop, count, truncated) {
-  const ws = ctx.wb.addWorksheet('Infos');
-  ws.columns = [{ width: 24 }, { width: 60 }];
-  const lines = [
-    ['Imprimerie', shop.shop_name || '—'],
-    ['Export', ctx.title],
-    ['Date de l\'export', new Date().toLocaleString('fr-FR')],
-    ['Filtres', ctx.filters || 'Aucun (toutes les données)'],
-    ['Lignes exportées', truncated ? `${MAX_ROWS} (limite atteinte)` : count],
-    ['Devise', shop.currency],
-  ];
-  lines.forEach((l) => { const r = ws.addRow(l); r.getCell(1).font = { bold: true }; });
+  ctx.wb.push({
+    name: 'Infos',
+    lines: [
+      ['Imprimerie', shop.shop_name || '—'],
+      ['Export', ctx.title],
+      ["Date de l'export", new Date().toLocaleString('fr-FR')],
+      ['Filtres', ctx.filters || 'Aucun (toutes les données)'],
+      ['Lignes exportées', truncated ? `${MAX_ROWS} (limite atteinte)` : count],
+      ['Devise', shop.currency],
+    ],
+  });
 }
 
 async function send(res, wb, slug) {
   const stamp = new Date().toISOString().slice(0, 10);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="${slug}-${stamp}.xlsx"`);
-  await wb.xlsx.write(res);
-  res.end();
+  res.end(Buffer.from(buildXlsx(wb, { creator: wb.creator })));
 }
 
 const PERIOD_SQL = { today: 'CURRENT_DATE', week: "date_trunc('week', CURRENT_DATE)::date", month: "date_trunc('month', CURRENT_DATE)::date" };

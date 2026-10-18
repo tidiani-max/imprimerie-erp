@@ -1,4 +1,4 @@
--- Imprimerie ERP/CRM PostgreSQL schema (version 1)
+-- Imprimerie ERP/CRM — PostgreSQL schema (version 1)
 -- Applied automatically at startup by server/src/migrate.js (idempotent).
 
 -- USERS & AUTH

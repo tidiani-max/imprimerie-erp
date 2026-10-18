@@ -34,6 +34,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ${{ matrix.script }}
+      - name: Smoke test the packaged app (the installer is only published if this passes)
+        run: node scripts/smoke-packaged.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}

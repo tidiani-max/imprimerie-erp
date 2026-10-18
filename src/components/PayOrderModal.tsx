@@ -5,7 +5,7 @@ import { PAYMENT_METHODS } from "../lib/types";
 import type { OrderRow } from "./OrdersTable";
 import { Button, ErrorNote, Field, Modal, SelectField, inputCls, notify, notifyChange } from "./ui";
 
-/** Add a payment to one order (PUT /api/orders/:id) the server mirrors it in the cash register. */
+/** Add a payment to one order (PUT /api/orders/:id) — the server mirrors it in the cash register. */
 export default function PayOrderModal({ order, onClose }: { order: OrderRow; onClose: () => void }) {
   const [amount, setAmount] = useState(order.amount_due);
   const [method, setMethod] = useState("Espèces");
