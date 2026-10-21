@@ -13,6 +13,7 @@ const navItems: { to: string; label: string; icon: IconName; end?: boolean; owne
   { to: "/orders", label: "Ventes / Commandes", icon: "orders" },
   { to: "/supports", label: "Bâches & autocollants", icon: "banner" },
   { to: "/clients", label: "Clients / Dettes", icon: "clients" },
+  { to: "/suppliers", label: "Fournisseurs & dettes", icon: "store", ownerOnly: true },
   { to: "/stock", label: "Stock", icon: "stock" },
   { to: "/expenses", label: "Dépenses", icon: "expenses" },
   { to: "/cash", label: "Caisse", icon: "cash" },

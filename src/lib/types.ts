@@ -31,6 +31,7 @@ export type Dashboard = {
   monthly_revenue: number; monthly_revenue_trend: number | null;
   monthly_expenses: number; monthly_expenses_trend: number | null;
   net_profit: number; unpaid_debts: number; unpaid_count: number; stock_value: number;
+  supplier_debts: number; supplier_unpaid_count: number; supplier_costs_month: number;
   orders_month: number; orders_month_trend: number | null;
   top_items: { name: string; amount: number; share: number }[]; top_items_total: number;
   series: { month: string; sales: number; expenses: number }[];
@@ -53,3 +54,15 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 // Supports priced by surface (width × height in cm × rate per cm²).
 export const SUPPORT_TYPES = ["Bâche", "Autocollant", "Perforé", "Étiquettes", "Transparents"] as const;
+
+// Money the imprimerie owes: shops, other workshops (subcontracting), anyone else.
+export type Supplier = {
+  id: number; name: string; phone: string | null; kind: "Fournisseur" | "Sous-traitant" | "Autre"; notes: string | null;
+  bills_count: number; total_billed: number; total_paid: number; debt: number; opening_total: number; opening_paid: number;
+  next_due: string | null; overdue: boolean; last_bill_date: string | null; status: "ok" | "debt" | "overdue";
+};
+export const SUPPLIER_KINDS: { value: Supplier["kind"]; label: string }[] = [
+  { value: "Fournisseur", label: "Fournisseur (boutique, magasin…)" },
+  { value: "Sous-traitant", label: "Sous-traitant (autre atelier)" },
+  { value: "Autre", label: "Autre (personne, société)" },
+];

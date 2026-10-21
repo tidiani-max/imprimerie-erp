@@ -42,6 +42,13 @@ try {
   check(r.status === 201 && r.data.order?.unit_price === 6000, 'bâche 200 × 100 is priced 6 000 per piece', JSON.stringify(r));
   const orderId = r.data.order?.id;
   await json('POST', '/api/expenses', { category: 'Encre', supplier: 'X', amount: 250, payment_method: 'Espèces' });
+  r = await json('POST', '/api/suppliers', { name: 'Atelier Diallo', kind: 'Sous-traitant', opening_debt: 20000 });
+  check(r.status === 201 && r.data.supplier?.debt === 20000, 'supplier with a previous debt', JSON.stringify(r));
+  const supplierId = r.data.supplier?.id;
+  r = await json('POST', `/api/suppliers/${supplierId}/bills`, { description: 'Impression bâche', amount: 30000 });
+  check(r.status === 201 && r.data.supplier?.debt === 50000, 'work passed to another workshop: you owe 50 000', JSON.stringify(r));
+  r = await json('POST', `/api/suppliers/${supplierId}/payments`, { amount: 10000 });
+  check(r.status === 200 && r.data.supplier?.debt === 40000, 'paying a supplier lowers the debt', JSON.stringify(r));
   r = await json('GET', `/api/orders/${orderId}/receipt`);
   check(r.status === 200 && r.data.client?.debt === 47000, 'receipt data: client debt 47 000', JSON.stringify(r));
   r = await json('GET', '/api/dashboard');
@@ -50,7 +57,7 @@ try {
   r = await json('PUT', '/api/settings', { currency: 'FCFA', logo: PNG });
   check(r.status === 200 && r.data.logo === PNG, 'shop settings and logo are saved', JSON.stringify(r).slice(0, 200));
 
-  for (const kind of ['orders', 'clients', 'stock', 'expenses', 'cash', 'report']) {
+  for (const kind of ['orders', 'clients', 'stock', 'expenses', 'cash', 'suppliers', 'report']) {
     const res = await call('GET', `/api/export/${kind}.xlsx`);
     const bytes = new Uint8Array(await res.arrayBuffer());
     let files = {};

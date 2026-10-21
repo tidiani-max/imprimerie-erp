@@ -34,6 +34,7 @@ export const api = {
   post: <T,>(url: string, body?: unknown) => request<T>("POST", url, body ?? {}),
   put: <T,>(url: string, body: unknown) => request<T>("PUT", url, body),
   patch: <T,>(url: string, body: unknown) => request<T>("PATCH", url, body),
+  delete: <T,>(url: string) => request<T>("DELETE", url),
   /** Downloads a file (e.g. an Excel export) with the current session. Returns the file name. */
   async download(url: string): Promise<string> {
     let res: Response;

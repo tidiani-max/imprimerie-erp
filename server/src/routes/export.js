@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireOwner } from '../auth.js';
 import { likeParam } from '../http.js';
 import { getDashboard } from '../dashboardData.js';
 import { SUPPORT_TYPES } from '../supports.js';
@@ -184,11 +185,57 @@ router.get('/cash.xlsx', async (req, res) => {
   await send(res, ctx.wb, 'caisse');
 });
 
+router.get('/suppliers.xlsx', requireOwner, async (req, res) => {
+  const { db } = req.app.locals;
+  const shop = await readSettings(db);
+  const like = likeParam(req.query.q);
+  const cur = shop.currency;
+  const filter = ['($1::text IS NULL OR s.name ILIKE $1 OR s.phone ILIKE $1)'];
+  const suppliers = await db.query(
+    `SELECT s.name, s.kind, s.phone, COALESCE(SUM(b.amount), 0) AS billed, COALESCE(SUM(b.amount_paid), 0) AS paid,
+            COALESCE(SUM(b.amount - b.amount_paid), 0) AS debt,
+            COALESCE(SUM(b.amount - b.amount_paid) FILTER (WHERE b.is_opening), 0) AS opening_due,
+            MIN(b.due_date) FILTER (WHERE b.amount > b.amount_paid) AS next_due,
+            COALESCE(BOOL_OR(b.amount > b.amount_paid AND b.due_date < CURRENT_DATE), false) AS overdue,
+            to_char(s.created_at, 'YYYY-MM-DD') AS created
+     FROM suppliers s LEFT JOIN supplier_bills b ON b.supplier_id = s.id WHERE ${filter[0]} GROUP BY s.id ORDER BY lower(s.name) LIMIT ${MAX_ROWS + 1}`, [like]);
+  const bills = await db.query(
+    `SELECT b.bill_date, s.name AS supplier, CASE WHEN b.is_opening THEN 'Dette antérieure' ELSE b.description END AS description, b.reference,
+            b.amount, b.amount_paid, (b.amount - b.amount_paid) AS due, b.due_date,
+            CASE WHEN b.amount_paid >= b.amount THEN 'Paid' WHEN b.amount_paid > 0 THEN 'Partial' ELSE 'Unpaid' END AS status
+     FROM supplier_bills b JOIN suppliers s ON s.id = b.supplier_id WHERE ${filter[0]} ORDER BY b.bill_date DESC, b.id DESC LIMIT ${MAX_ROWS + 1}`, [like]);
+  const payments = await db.query(
+    `SELECT to_char(p.paid_at, 'YYYY-MM-DD HH24:MI') AS at, s.name AS supplier, CASE WHEN b.is_opening THEN 'Dette antérieure' ELSE b.description END AS description,
+            p.amount, p.payment_method
+     FROM supplier_payments p JOIN suppliers s ON s.id = p.supplier_id LEFT JOIN supplier_bills b ON b.id = p.bill_id
+     WHERE ${filter[0]} ORDER BY p.id DESC LIMIT ${MAX_ROWS + 1}`, [like]);
+  const ctx = newWorkbook(shop, 'Fournisseurs & dettes (ce que vous devez)', req.query.q ? `recherche « ${req.query.q} »` : '');
+  const { truncated } = addTable(ctx.wb, 'Fournisseurs', [
+    { header: 'Fournisseur / atelier', key: 'name', width: 30 }, { header: 'Type', key: 'kind', width: 15 }, { header: 'Téléphone', key: 'phone', width: 18 },
+    { header: `Total facturé (${cur})`, key: 'billed', type: 'money', width: 19, total: true }, { header: `Déjà payé (${cur})`, key: 'paid', type: 'money', width: 17, total: true },
+    { header: `Reste à payer (${cur})`, key: 'debt', type: 'money', width: 19, total: true }, { header: `dont dette antérieure (${cur})`, key: 'opening_due', type: 'money', width: 24, total: true },
+    { header: 'Prochaine échéance', key: 'next_due', type: 'date', width: 18 }, { header: 'Statut', key: 'status', width: 12 }, { header: 'Depuis', key: 'created', type: 'date', width: 12 },
+  ], suppliers.map((r) => ({ ...r, next_due: day(r.next_due), created: day(r.created), status: r.debt <= 0 ? 'À jour' : r.overdue ? 'En retard' : 'À payer' })));
+  addTable(ctx.wb, 'Achats et travaux', [
+    { header: 'Date', key: 'bill_date', type: 'date', width: 12 }, { header: 'Fournisseur / atelier', key: 'supplier', width: 28 }, { header: 'Description', key: 'description', width: 34 },
+    { header: 'Référence', key: 'reference', width: 18 }, { header: `Montant (${cur})`, key: 'amount', type: 'money', width: 16, total: true },
+    { header: `Payé (${cur})`, key: 'amount_paid', type: 'money', width: 16, total: true }, { header: `Reste (${cur})`, key: 'due', type: 'money', width: 16, total: true },
+    { header: 'Échéance', key: 'due_date', type: 'date', width: 12 }, { header: 'Statut', key: 'status', width: 10 },
+  ], bills.map((r) => ({ ...r, bill_date: day(r.bill_date), due_date: day(r.due_date), status: STATUS_FR[r.status] ?? r.status })));
+  addTable(ctx.wb, 'Paiements', [
+    { header: 'Date et heure', key: 'at', width: 18 }, { header: 'Fournisseur / atelier', key: 'supplier', width: 28 }, { header: 'Pour', key: 'description', width: 34 },
+    { header: `Montant (${cur})`, key: 'amount', type: 'money', width: 16, total: true }, { header: 'Mode de paiement', key: 'payment_method', width: 17 },
+  ], payments);
+  addInfo(ctx, shop, Math.min(suppliers.length, MAX_ROWS), truncated);
+  await send(res, ctx.wb, 'fournisseurs');
+});
+
 // The same numbers as the dashboard (shared calculation), plus cash and the biggest debtors.
 router.get('/report.xlsx', async (req, res) => {
   const { db } = req.app.locals;
   const shop = await readSettings(db);
   const d = await getDashboard(db);
+  const isOwner = req.user?.role === 'owner'; // what the shop owes to others stays with the owner
   const [cash] = await db.query(`SELECT COALESCE((SELECT running_balance FROM cash_register ORDER BY id DESC LIMIT 1), 0) AS balance,
       COALESCE(SUM(amount) FILTER (WHERE type = 'IN'), 0) AS today_in, COALESCE(SUM(amount) FILTER (WHERE type = 'OUT'), 0) AS today_out
     FROM cash_register WHERE created_at >= CURRENT_DATE`);
@@ -202,7 +249,8 @@ router.get('/report.xlsx', async (req, res) => {
   ], [
     { k: "Chiffre d'affaires du jour", v: d.today_revenue }, { k: "Chiffre d'affaires du mois", v: d.monthly_revenue },
     { k: 'Dépenses du mois', v: d.monthly_expenses }, { k: 'Bénéfice estimé du mois', v: d.net_profit },
-    { k: 'Dettes clients impayées', v: d.unpaid_debts }, { k: 'Valeur du stock', v: d.stock_value },
+    { k: 'Dettes clients impayées', v: d.unpaid_debts },
+    ...(isOwner ? [{ k: 'Dettes fournisseurs (ce que vous devez)', v: d.supplier_debts }, { k: 'dont achats / travaux à crédit du mois (inclus dans les dépenses)', v: d.supplier_costs_month }] : []), { k: 'Valeur du stock', v: d.stock_value },
     { k: 'Solde de la caisse', v: cash.balance }, { k: "Encaissé aujourd'hui", v: cash.today_in }, { k: "Dépensé aujourd'hui (caisse)", v: cash.today_out },
     { k: 'Commandes ce mois (nombre)', v: d.orders_month }, { k: 'Factures impayées (nombre)', v: d.unpaid_count },
   ]);
@@ -217,6 +265,13 @@ router.get('/report.xlsx', async (req, res) => {
     { header: 'Client', key: 'name', width: 28 }, { header: 'Téléphone', key: 'phone', width: 18 },
     { header: `Dette (${cur})`, key: 'debt', type: 'money', width: 16, total: true }, { header: 'Plus ancienne échéance', key: 'oldest_due', type: 'date', width: 22 },
   ], debtors.map((r) => ({ ...r, oldest_due: day(r.oldest_due) })));
+  const owed = isOwner ? await db.query(
+    `SELECT s.name, s.kind, s.phone, SUM(b.amount - b.amount_paid) AS debt, MIN(b.due_date) FILTER (WHERE b.amount > b.amount_paid) AS oldest_due
+     FROM supplier_bills b JOIN suppliers s ON s.id = b.supplier_id WHERE b.amount > b.amount_paid GROUP BY s.id ORDER BY 4 DESC LIMIT 1000`) : [];
+  if (isOwner) addTable(ctx.wb, 'Dettes fournisseurs', [
+    { header: 'Fournisseur / atelier', key: 'name', width: 30 }, { header: 'Type', key: 'kind', width: 15 }, { header: 'Téléphone', key: 'phone', width: 18 },
+    { header: `Vous devez (${cur})`, key: 'debt', type: 'money', width: 18, total: true }, { header: 'Plus ancienne échéance', key: 'oldest_due', type: 'date', width: 22 },
+  ], owed.map((r) => ({ ...r, oldest_due: day(r.oldest_due) })));
   addInfo(ctx, shop, d.series.length, false);
   await send(res, ctx.wb, 'rapport');
 });

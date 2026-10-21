@@ -19,6 +19,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import usersRoutes from './routes/users.js';
 import settingsRoutes from './routes/settings.js';
 import exportRoutes from './routes/export.js';
+import suppliersRoutes from './routes/suppliers.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +53,7 @@ export async function createApp(overrides = {}) {
   app.use('/api/users', usersRoutes);
   app.use('/api/settings', settingsRoutes);
   app.use('/api/export', exportRoutes);
+  app.use('/api/suppliers', suppliersRoutes);
   app.use('/api', (_req, _res) => { throw new HttpError(404, 'Route introuvable'); });
 
   // Serve the built React app (production / desktop). In dev, Vite serves it and proxies /api here.

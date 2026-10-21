@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "server": "node server/src/index.js",
     "server:dev": "node --watch server/src/index.js",
-    "test:api": "node server/test/smoke.test.js && node server/test/accounts.test.js && node server/test/business.test.js",
+    "test:api": "node server/test/smoke.test.js && node server/test/accounts.test.js && node server/test/business.test.js && node server/test/suppliers.test.js",
     "desktop:dev": "concurrently -k -n vite,api,electron -c blue,green,magenta \"vite\" \"cross-env PORT=3001 node server/src/index.js\" \"wait-on tcp:8443 tcp:3001 && cross-env ELECTRON_DEV_URL=http://localhost:8443 electron .\"",
     "desktop:build": "vite build && electron-builder --publish never",
     "desktop:build:win": "vite build && electron-builder --win --x64 --publish never",

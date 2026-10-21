@@ -22,3 +22,6 @@ logs/
 
 # build output
 release/
+
+# local database + secret created when the app runs from source (never commit these)
+data/

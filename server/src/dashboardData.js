@@ -3,6 +3,9 @@ const pct = (cur, prev) => (prev > 0 ? Math.round(((cur - prev) / prev) * 1000) 
 // Single source of truth for the dashboard AND the Excel report, so they can never disagree.
 // Revenue = billed turnover (orders.total_amount by order_date), excluding previous-debt rows (they are not sales).
 // Debts = everything still owed on orders, previous-debt rows included.
+// Costs = direct expenses + purchases / subcontracted jobs recorded on Fournisseurs (by bill date, previous debts excluded:
+// a debt from before the app is not a cost of this month). Paying a supplier is cash going out, not a second cost.
+// Supplier debts = everything the imprimerie still has to pay to others.
 export async function getDashboard(db) {
   const [k] = await db.query(`
     WITH b AS (SELECT CURRENT_DATE AS today, date_trunc('month', CURRENT_DATE)::date AS m0,
@@ -12,8 +15,13 @@ export async function getDashboard(db) {
       COALESCE((SELECT SUM(total_amount) FROM orders, b WHERE NOT is_opening AND order_date = b.today - 1), 0) AS rev_yesterday,
       COALESCE((SELECT SUM(total_amount) FROM orders, b WHERE NOT is_opening AND order_date >= b.m0), 0) AS rev_month,
       COALESCE((SELECT SUM(total_amount) FROM orders, b WHERE NOT is_opening AND order_date >= b.pm0 AND order_date < b.m0), 0) AS rev_prev_month,
-      COALESCE((SELECT SUM(amount) FROM expenses, b WHERE expense_date >= b.m0), 0) AS exp_month,
-      COALESCE((SELECT SUM(amount) FROM expenses, b WHERE expense_date >= b.pm0 AND expense_date < b.m0), 0) AS exp_prev_month,
+      COALESCE((SELECT SUM(amount) FROM expenses, b WHERE expense_date >= b.m0), 0)
+        + COALESCE((SELECT SUM(amount) FROM supplier_bills, b WHERE NOT is_opening AND bill_date >= b.m0), 0) AS exp_month,
+      COALESCE((SELECT SUM(amount) FROM expenses, b WHERE expense_date >= b.pm0 AND expense_date < b.m0), 0)
+        + COALESCE((SELECT SUM(amount) FROM supplier_bills, b WHERE NOT is_opening AND bill_date >= b.pm0 AND bill_date < b.m0), 0) AS exp_prev_month,
+      COALESCE((SELECT SUM(amount) FROM supplier_bills, b WHERE NOT is_opening AND bill_date >= b.m0), 0) AS supplier_costs_month,
+      COALESCE((SELECT SUM(amount - amount_paid) FROM supplier_bills), 0) AS supplier_debt,
+      (SELECT COUNT(*) FROM supplier_bills WHERE amount > amount_paid) AS supplier_unpaid_count,
       COALESCE((SELECT SUM(total_amount - amount_paid) FROM orders), 0) AS unpaid_total,
       (SELECT COUNT(*) FROM orders WHERE total_amount > amount_paid) AS unpaid_count,
       (SELECT COUNT(*) FROM orders, b WHERE NOT is_opening AND order_date >= b.m0) AS orders_month,
@@ -29,7 +37,8 @@ export async function getDashboard(db) {
   const series = await db.query(`
     SELECT to_char(m, 'YYYY-MM') AS month,
            COALESCE((SELECT SUM(total_amount) FROM orders WHERE NOT is_opening AND order_date >= m::date AND order_date < (m + interval '1 month')::date), 0) AS sales,
-           COALESCE((SELECT SUM(amount) FROM expenses WHERE expense_date >= m::date AND expense_date < (m + interval '1 month')::date), 0) AS expenses
+           COALESCE((SELECT SUM(amount) FROM expenses WHERE expense_date >= m::date AND expense_date < (m + interval '1 month')::date), 0)
+             + COALESCE((SELECT SUM(amount) FROM supplier_bills WHERE NOT is_opening AND bill_date >= m::date AND bill_date < (m + interval '1 month')::date), 0) AS expenses
     FROM generate_series(date_trunc('month', CURRENT_DATE) - interval '11 months', date_trunc('month', CURRENT_DATE), interval '1 month') AS m
     ORDER BY m`);
 
@@ -45,6 +54,7 @@ export async function getDashboard(db) {
     monthly_expenses: k.exp_month, monthly_expenses_trend: pct(k.exp_month, k.exp_prev_month),
     net_profit: Math.round((k.rev_month - k.exp_month) * 100) / 100,
     unpaid_debts: k.unpaid_total, unpaid_count: k.unpaid_count,
+    supplier_debts: k.supplier_debt, supplier_unpaid_count: k.supplier_unpaid_count, supplier_costs_month: k.supplier_costs_month,
     stock_value: k.stock_value,
     orders_month: k.orders_month, orders_month_trend: pct(k.orders_month, k.orders_prev_month),
     top_items: top.map((r) => ({ ...r, share: topTotal ? Math.round((r.amount / topTotal) * 100) : 0 })),

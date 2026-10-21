@@ -4,7 +4,7 @@ export type IconName =
   | "dashboard" | "orders" | "clients" | "stock" | "expenses" | "cash"
   | "search" | "calendar" | "plus" | "bell" | "chevron" | "arrowUp"
   | "arrowDown" | "wallet" | "box" | "receipt" | "more" | "printer"
-  | "edit" | "trash" | "menu" | "close" | "filter" | "download" | "banner" | "settings";
+  | "edit" | "trash" | "menu" | "close" | "filter" | "download" | "banner" | "settings" | "store";
 
 const iconPaths: Record<IconName, ReactNode> = {
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
@@ -32,6 +32,7 @@ const iconPaths: Record<IconName, ReactNode> = {
   filter: <path d="M4 5h16l-6 7v6l-4 2v-8Z"/>,
   download: <><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></>,
   banner: <><rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M7 7v3M11 7v2M15 7v3M19 7v2"/></>,
+  store: <><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></>,
   settings: <><path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></>,
 };
 

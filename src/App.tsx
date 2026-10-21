@@ -5,6 +5,7 @@ import AppShell from "./layout/AppShell";
 import AccountPage from "./pages/Account";
 import SettingsPage from "./pages/Settings";
 import SupportsPage from "./pages/Supports";
+import SuppliersPage from "./pages/Suppliers";
 import CashPage from "./pages/Cash";
 import ClientsPage from "./pages/Clients";
 import DashboardPage from "./pages/Dashboard";
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="account" element={<AccountPage/>}/>
         <Route path="settings" element={<SettingsPage/>}/>
         <Route path="supports" element={<SupportsPage/>}/>
+        <Route path="suppliers" element={<SuppliersPage/>}/>
         <Route path="*" element={<DashboardPage/>}/>
       </Route>
     </Routes>
